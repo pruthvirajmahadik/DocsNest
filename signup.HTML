@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code’n’Go - Academic Resource Manager</title>
+
+  <style>
+    :root {
+      --primary-purple: #6A1B9A;
+      --black: #000000;
+      --dark-gray: #1e1e1e;
+      --light-purple: #E1BEE7;
+      --white: #FFFFFF;
+      --font-family: 'Poppins', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--black);
+      color: var(--white);
+      overflow: hidden;
+    }
+
+    /* LOADING SCREEN */
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, var(--black), var(--primary-purple));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      animation: fadeOut 1s ease forwards;
+      animation-delay: 1.8s;
+    }
+    .loading-text { font-size: 2.5rem; font-weight: bold; color: var(--light-purple); animation: pulse 1s infinite; }
+    .loading-sub { font-size: 1rem; color: var(--white); margin-top: 0.5rem; opacity: 0.8; }
+
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+    @keyframes fadeOut { to{opacity:0;visibility:hidden;} }
+
+    /* LOGIN PAGE */
+    .login-container {
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, var(--primary-purple), var(--black));
+    }
+    .login-form {
+      background: var(--dark-gray);
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(106, 27, 154, 0.4);
+      width: 320px; text-align: center;
+    }
+    .login-form h1 { color: var(--primary-purple); margin-bottom: 1rem; }
+    .role-buttons { display: flex; flex-direction: column; gap: 1rem; margin: 1rem 0; }
+    .role-btn {
+      background: var(--primary-purple); color: var(--white);
+      padding: 0.7rem; border: none; border-radius: 5px;
+      cursor: pointer; transition: 0.3s;
+    }
+    .role-btn:hover { background: var(--light-purple); color: var(--black); }
+    #adminPasswordDiv { margin-top: 1rem; display: none; }
+    #adminPasswordDiv input {
+      width: 100%; padding: 0.7rem; margin: 0.5rem 0;
+      border: 1px solid var(--light-purple); border-radius: 5px;
+      background: var(--black); color: var(--white);
+    }
+    #adminPasswordDiv button {
+      background: var(--primary-purple); color: var(--white);
+      padding: 0.7rem; border: none; border-radius: 5px; cursor: pointer;
+    }
+
+    /* MAIN APP */
+    .app-container { display: none; height: 100vh; }
+    header {
+      background: var(--black);
+      border-bottom: 2px solid var(--primary-purple);
+      padding: 1rem; display: flex; align-items: center; justify-content: space-between;
+      position: fixed; top: 0; width: 100%; z-index: 10;
+    }
+    .logo { color: var(--primary-purple); font-weight: bold; font-size: 1.4rem; }
+    .search-bar input {
+      padding: 0.5rem; border: 1px solid var(--primary-purple);
+      border-radius: 5px; background: var(--dark-gray); color: var(--white);
+      width: 300px;
+    }
+    .upload-btn, .drive-btn {
+      background: var(--primary-purple); color: var(--white);
+      border: none; padding: 0.5rem 1rem; border-radius: 5px;
+      cursor: pointer; margin-left: 1rem; display: none;
+    }
+    .sidebar {
+      width: 230px; background: var(--dark-gray);
+      position: fixed; top: 65px; left: 0;
+      height: calc(100vh - 65px); padding: 1rem;
+    }
+    .sidebar h2 { color: var(--primary-purple); margin-bottom: 1rem; }
+    .subject-folder {
+      background: var(--black); padding: 0.8rem; margin-bottom: 0.5rem;
+      border-left: 4px solid var(--primary-purple);
+      border-radius: 5px; cursor: pointer; transition: 0.3s;
+    }
+    .subject-folder:hover { background: var(--light-purple); color: var(--black); }
+    .main-content { margin-left: 250px; margin-top: 80px; padding: 1.5rem; }
+    .file-card {
+      background: var(--dark-gray); border: 1px solid var(--primary-purple);
+      border-radius: 8px; padding: 1rem; margin-bottom: 1rem;
+      cursor: pointer; transition: 0.3s;
+    }
+    .file-card:hover { background: var(--primary-purple); transform: scale(1.02); }
+    .doc-nest {
+      background: var(--black); border-top: 2px solid var(--primary-purple);
+      padding: 1rem; margin-top: 2rem; text-align: center;
+    }
+
+    /* UPLOAD MODAL */
+    .modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: var(--dark-gray); padding: 2rem; border-radius: 10px;
+      text-align: center; border: 2px solid var(--primary-purple);
+      width: 350px;
+    }
+    .close { float: right; cursor: pointer; color: var(--light-purple); font-size: 1.5rem; }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 100%; position: relative; }
+      .main-content { margin-left: 0; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LOADING SCREEN -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-text">DocsNest</div>
+    <div class="loading-sub">Loading academic resources...</div>
+  </div>
+
+  <!-- LOGIN PAGE -->
+  <div id="loginPage" class="login-container" style="display:none;">
+    <div class="login-form">
+      <h1>DocsNest</h1>
+      <p>Select your role to login:</p>
+      <div class="role-buttons">
+        <button class="role-btn" onclick="selectRole('student')">Login as Student</button>
+        <button class="role-btn" onclick="selectRole('admin')">Login as Admin</button>
+      </div>
+
+      <div id="adminPasswordDiv">
+        <input type="password" id="password" placeholder="Enter Admin Password">
+        <button onclick="loginAdmin()">Enter</button>
+      </div>
+
+      <p style="font-size: 0.8rem; margin-top: 1rem;">Students: No password required.</p>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="appContainer" class="app-container">
+    <header>
+      <div class="logo">DocsNest</div>
+      <div class="search-bar"><input type="text" id="searchInput" placeholder="Search files..." onkeyup="searchFiles()"></div>
+      <button id="uploadBtn" class="upload-btn" onclick="openUploadModal()">Upload</button>
+      <button id="driveBtn" class="drive-btn">Sync Drive</button>
+      <div id="profileDisplay" style="color: var(--light-purple); margin-left: 1rem;">Guest</div>
+    </header>
+
+    <div class="sidebar">
+      <h2>Subjects</h2>
+      <div class="subject-folder" onclick="loadSubject('digital-technology', this)">Digital logic design</div>
+      <div class="subject-folder" onclick="loadSubject('maths', this)">Maths</div>
+      <div class="subject-folder" onclick="loadSubject('physics', this)">Physics</div>
+      <div class="subject-folder" onclick="loadSubject('c-language', this)">C Language</div>
+    </div>
+
+    <div class="main-content">
+      <h2 id="subjectTitle">Digital logic design</h2>
+      <div id="fileGrid"></div>
+
+      <div class="doc-nest">
+        <h2>Doc Nest</h2>
+        <p id="docNestViewer">Select a file to preview details here.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD MODAL -->
+  <div id="uploadModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeUploadModal()">&times;</span>
+      <h2>Upload File</h2>
+
+      <label for="subjectSelect">Select Subject:</label>
+      <select id="subjectSelect" style="padding:0.5rem;margin-bottom:1rem;border-radius:5px;border:1px solid var(--primary-purple);background:var(--black);color:var(--white);">
+        <option value="digital-technology">Digital logic design</option>
+        <option value="maths">Maths</option>
+        <option value="physics">Physics</option>
+        <option value="c-language">C Language</option>
+      </select>
+
+      <label for="titleInput">Enter File Title:</label>
+      <input type="text" id="titleInput" placeholder="Enter a descriptive title..." style="width:100%;padding:0.5rem;border-radius:5px;border:1px solid var(--primary-purple);background:var(--black);color:var(--white);margin-bottom:1rem;">
+
+      <input type="file" id="fileInput" accept=".pdf,.doc,.docx" style="margin-top:10px;">
+      <button onclick="uploadFile()" style="margin-top:10px;background:var(--primary-purple);color:var(--white);border:none;padding:0.5rem 1rem;border-radius:5px;cursor:pointer;">Upload</button>
+
+      <p id="uploadStatus" style="margin-top:10px;color:var(--light-purple);"></p>
+    </div>
+  </div>
+
+  <script>
+    let mockFiles = {
+      'digital-technology': [
+        { name: 'Digital Tech Notes.pdf', title: 'Logic Notes', type: 'pdf', date: '2023-10-01', nested: 'Sub-notes on circuits' },
+      ],
+      'maths': [{ name: 'Calculus Formulas.pdf', title: 'Derivatives Quick Sheet', type: 'pdf', date: '2023-10-05', nested: 'Derivatives section' }],
+      'physics': [{ name: 'Mechanics Slides.pdf', title: 'Newton’s Laws Notes', type: 'pdf', date: '2023-10-03', nested: "Newton's laws" }],
+      'c-language': [{ name: 'C Programming Guide.pdf', title: 'Loop Reference', type: 'pdf', date: '2023-10-02', nested: 'Loops and arrays' }]
+    };
+
+    let currentUser = null;
+    let currentSubject = 'digital-technology';
+
+    window.onload = function() {
+      setTimeout(() => {
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('loginPage').style.display = 'flex';
+        document.body.style.overflow = 'auto';
+      }, 2000);
+    };
+
+    function selectRole(role) {
+      if (role === 'student') {
+        currentUser = 'student';
+        document.getElementById('profileDisplay').textContent = 'Student View';
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        loadSubject('digital-technology');
+      } else {
+        document.getElementById('adminPasswordDiv').style.display = 'block';
+      }
+    }
+
+    function loginAdmin() {
+      const password = document.getElementById('password').value;
+      if (password === 'CnG001') {
+        currentUser = 'admin';
+        document.getElementById('profileDisplay').textContent = 'Admin Panel';
+        document.getElementById('uploadBtn').style.display = 'inline-block';
+        document.getElementById('driveBtn').style.display = 'inline-block';
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        loadSubject('digital-technology');
+      } else alert('Incorrect password! Try again.');
+    }
+
+    function loadSubject(subject, el) {
+      currentSubject = subject;
+      document.querySelectorAll('.subject-folder').forEach(f => f.classList.remove('active'));
+      if (el) el.classList.add('active');
+      const grid = document.getElementById('fileGrid');
+      const files = mockFiles[subject] || [];
+      grid.innerHTML = '';
+      if (files.length === 0) { grid.innerHTML = '<p>No files found.</p>'; return; }
+      files.forEach(file => {
+        const card = document.createElement('div');
+        card.className = 'file-card';
+        card.innerHTML = `<h3>${file.title}</h3><p>${file.name}</p><p>Type: ${file.type.toUpperCase()} | Date: ${file.date}</p>`;
+        card.onclick = function() { viewFile(file); };
+        grid.appendChild(card);
+      });
+      document.getElementById('subjectTitle').textContent = subject.replace('-', ' ').toUpperCase();
+    }
+
+    function viewFile(file) {
+      document.getElementById('docNestViewer').innerHTML = `<strong>${file.title}</strong><br>${file.name}<br>${file.nested}`;
+    }
+
+    function openUploadModal() {
+      document.getElementById('uploadModal').style.display = 'flex';
+      document.getElementById('uploadStatus').textContent = '';
+    }
+
+    function closeUploadModal() {
+      document.getElementById('uploadModal').style.display = 'none';
+      document.getElementById('fileInput').value = '';
+      document.getElementById('titleInput').value = '';
+    }
+
+    function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const titleInput = document.getElementById('titleInput');
+      const subjectSelect = document.getElementById('subjectSelect');
+      const status = document.getElementById('uploadStatus');
+
+      const selectedSubject = subjectSelect.value;
+      const title = titleInput.value.trim();
+      const files = fileInput.files;
+
+      if (!title) { status.textContent = 'Please enter a title.'; return; }
+      if (!files.length) { status.textContent = 'Please select a file to upload.'; return; }
+
+      for (let file of files) {
+        const fileType = file.name.split('.').pop();
+        const newFile = {
+          name: file.name,
+          title: title,
+          type: fileType,
+          date: new Date().toISOString().split('T')[0],
+          nested: 'Uploaded by Admin'
+        };
+        if (!mockFiles[selectedSubject]) mockFiles[selectedSubject] = [];
+        mockFiles[selectedSubject].push(newFile);
+      }
+
+      status.textContent = `✅ Uploaded successfully to ${selectedSubject.replace('-', ' ')}!`;
+
+      if (currentSubject === selectedSubject) loadSubject(selectedSubject);
+      fileInput.value = ''; titleInput.value = '';
+    }
+
+    function searchFiles() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const files = mockFiles[currentSubject].filter(f => f.name.toLowerCase().includes(query) || f.title.toLowerCase().includes(query));
+      const grid = document.getElementById('fileGrid');
+      grid.innerHTML = '';
+      files.forEach(file => {
+        const card = document.createElement('div');
+        card.className = 'file-card';
+        card.innerHTML = `<h3>${file.title}</h3><p>${file.name}</p><p>Type: ${file.type.toUpperCase()} | Date: ${file.date}</p>`;
+        card.onclick = function() { viewFile(file); };
+        grid.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
